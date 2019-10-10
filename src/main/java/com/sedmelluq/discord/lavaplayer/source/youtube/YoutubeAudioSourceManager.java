@@ -456,7 +456,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
 
     JsonBrowser alerts = jsonResponse.safeGet("alerts");
 
-    if (alerts != null) {
+    if (!alerts.isNull()) {
       throw new FriendlyException(alerts.index(0).safeGet("alertRenderer").safeGet("text").safeGet("simpleText").text(), COMMON, null);
     }
 
@@ -517,7 +517,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   private String extractPlaylistTracks(JsonBrowser playlistVideoList, List<AudioTrack> tracks) {
     JsonBrowser trackArray = playlistVideoList.safeGet("contents");
 
-    if (trackArray == null) return null;
+    if (trackArray.isNull()) return null;
 
     for (JsonBrowser track : trackArray.values()) {
       JsonBrowser item = track.safeGet("playlistVideoRenderer");
@@ -532,9 +532,12 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       }
     }
 
-    String continuationsToken = playlistVideoList.safeGet("continuations").index(0).safeGet("nextContinuationData").safeGet("continuation").text();
+    JsonBrowser continuations = playlistVideoList.safeGet("continuations");
 
-    if (continuationsToken != null) return "/browse_ajax" + "?continuation=" + continuationsToken + "&ctoken=" + continuationsToken + "&hl=en";
+    if (!continuations.isNull()) {
+      String continuationsToken = continuations.index(0).safeGet("nextContinuationData").safeGet("continuation").text();
+      return "/browse_ajax" + "?continuation=" + continuationsToken + "&ctoken=" + continuationsToken + "&hl=en";
+    }
 
     return null;
   }
