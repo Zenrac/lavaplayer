@@ -31,12 +31,14 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.conn.routing.HttpRoutePlanner;
+import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
@@ -79,12 +81,13 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   private final boolean allowSearch;
   private volatile int playlistPageCount;
   private CacheProvider cacheProvider;
+  private CookieStore cookieStore;
 
   /**
    * Create an instance with default settings.
    */
   public YoutubeAudioSourceManager() {
-    this(true, null);
+    this(true, null, null);
   }
 
   /**
@@ -92,7 +95,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
    * @param allowSearch Whether to allow search queries as identifiers
    */
   public YoutubeAudioSourceManager(boolean allowSearch) {
-    this(allowSearch, null);
+    this(allowSearch, null, null);
   }
 
   /**
@@ -101,6 +104,26 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
    * @param routePlanner An IPv6 subnet to balance requests over
    */
   public YoutubeAudioSourceManager(boolean allowSearch, HttpRoutePlanner routePlanner) {
+    this(allowSearch, routePlanner, null);
+  }
+
+  /**
+   * Create an instance.
+   * @param allowSearch Whether to allow search queries as identifiers
+   * @param cookieStore The CookieStore to initialize for this instance
+   */
+  public YoutubeAudioSourceManager(boolean allowSearch, CookieStore cookieStore) {
+    this(allowSearch, null, cookieStore);
+  }
+
+
+  /**
+   * Create an instance.
+   * @param allowSearch Whether to allow search queries as identifiers
+   * @param routePlanner An IPv6 subnet to balance requests over
+   * @param cookieStore The CookieStore to initialize for this instance
+   */
+  public YoutubeAudioSourceManager(boolean allowSearch, HttpRoutePlanner routePlanner, CookieStore cookieStore) {
     signatureCipherManager = new YoutubeSignatureCipherManager();
 
     HttpRequestModifier requestModifier = request -> {
@@ -110,10 +133,11 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       request.setHeader("x-youtube-client-version", "2.20191008.04.01");
     };
 
-    if (routePlanner == null) {
-      httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager(requestModifier);
-    } else {
+    if (cookieStore == null) {
       httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager(requestModifier, routePlanner);
+    } else {
+      this.cookieStore = cookieStore;
+      httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager(requestModifier, routePlanner, cookieStore);
     }
 
     this.allowSearch = allowSearch;
@@ -132,6 +156,10 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
 
   public void setCacheProvider(CacheProvider provider) {
     this.cacheProvider = provider;
+  }
+
+  public void replaceCooke(Cookie cookie) {
+    cookieStore.addCookie(cookie);
   }
 
   /**

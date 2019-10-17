@@ -37,6 +37,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.DefaultHttpResponseParser;
 import org.apache.http.impl.conn.ManagedHttpClientConnectionFactory;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.io.SessionInputBuffer;
 import org.apache.http.message.BasicLineParser;
 import org.apache.http.message.LineParser;
@@ -88,18 +89,17 @@ public class HttpClientTools {
   }
 
   /**
-   * @return Default HTTP interface manager with thread-local context
+   * @return An HttpClientBuilder which uses the same cookie store for all clients
    */
-  public static HttpInterfaceManager createDefaultThreadLocalManager() {
-    return new ThreadLocalHttpInterfaceManager(createSharedCookiesHttpBuilder(), DEFAULT_REQUEST_CONFIG, null);
+  public static HttpClientBuilder createSharedCookiesHttpBuilder(CookieStore cookieStore) {
+    return createHttpBuilder(DEFAULT_REQUEST_CONFIG, cookieStore);
   }
 
   /**
    * @return Default HTTP interface manager with thread-local context
    */
-  public static HttpInterfaceManager createDefaultThreadLocalManager(HttpRequestModifier requestModifier) {
-    return new ThreadLocalHttpInterfaceManager(createSharedCookiesHttpBuilder(), DEFAULT_REQUEST_CONFIG,
-        requestModifier);
+  public static HttpInterfaceManager createDefaultThreadLocalManager() {
+    return new ThreadLocalHttpInterfaceManager(createSharedCookiesHttpBuilder(), DEFAULT_REQUEST_CONFIG, null);
   }
 
   /**
@@ -108,6 +108,17 @@ public class HttpClientTools {
   public static HttpInterfaceManager createDefaultThreadLocalManager(HttpRequestModifier requestModifier, HttpRoutePlanner routePlanner) {
     return new ThreadLocalHttpInterfaceManager(
             createSharedCookiesHttpBuilder().setRoutePlanner(routePlanner),
+            DEFAULT_REQUEST_CONFIG,
+            requestModifier
+    );
+  }
+
+  /**
+   * @return Default HTTP interface manager with a custom HttpRoutePlanner, CookieStore and thread-local context
+   */
+  public static HttpInterfaceManager createDefaultThreadLocalManager(HttpRequestModifier requestModifier, HttpRoutePlanner routePlanner, CookieStore cookieStore) {
+    return new ThreadLocalHttpInterfaceManager(
+            createSharedCookiesHttpBuilder(cookieStore).setRoutePlanner(routePlanner),
             DEFAULT_REQUEST_CONFIG,
             requestModifier
     );
@@ -128,6 +139,13 @@ public class HttpClientTools {
         .setDefaultCookieStore(cookieStore)
         .setRetryHandler(NoResponseRetryHandler.RETRY_INSTANCE)
         .setDefaultRequestConfig(requestConfig);
+  }
+
+  private static HttpClientBuilder createHttpBuilder(RequestConfig requestConfig, CookieStore store) {
+    return new CustomHttpClientBuilder()
+            .setDefaultCookieStore(store)
+            .setRetryHandler(NoResponseRetryHandler.RETRY_INSTANCE)
+            .setDefaultRequestConfig(requestConfig);
   }
 
   private static SSLContext setupSslContext() {
