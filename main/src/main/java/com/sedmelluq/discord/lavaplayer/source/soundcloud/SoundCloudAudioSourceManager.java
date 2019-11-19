@@ -236,7 +236,8 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
         trackInfoJson.get("duration").as(Integer.class),
         identifier,
         false,
-        trackInfoJson.get("permalink_url").text()
+        trackInfoJson.get("permalink_url").text(),
+        Collections.singletonMap("artworkUrl", trackInfoJson.get("artwork_url").text())
     );
 
     return new SoundCloudAudioTrack(trackInfo, this);
