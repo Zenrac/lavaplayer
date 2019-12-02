@@ -35,7 +35,7 @@ public class DefaultSoundCloudDataReader implements SoundCloudDataReader {
         identifier,
         false,
         trackData.get("permalink_url").text(),
-        Collections.singletonMap("artworkUrl", trackInfoJson.get("artwork_url").text())
+        Collections.singletonMap("artworkUrl", trackData.get("artwork_url").text())
     );
   }
 
