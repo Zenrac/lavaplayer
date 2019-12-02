@@ -4,6 +4,7 @@ import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Collections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +35,7 @@ public class DefaultSoundCloudDataReader implements SoundCloudDataReader {
         identifier,
         false,
         trackData.get("permalink_url").text()
+        Collections.singletonMap("artworkUrl", trackInfoJson.get("artwork_url").text())
     );
   }
 
