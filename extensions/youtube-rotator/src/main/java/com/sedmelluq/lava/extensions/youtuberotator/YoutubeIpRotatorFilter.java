@@ -3,6 +3,7 @@ package com.sedmelluq.lava.extensions.youtuberotator;
 import com.sedmelluq.discord.lavaplayer.tools.http.HttpContextFilter;
 import com.sedmelluq.lava.extensions.youtuberotator.planner.AbstractRoutePlanner;
 import com.sedmelluq.lava.extensions.youtuberotator.tools.RateLimitException;
+import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import java.net.BindException;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -100,6 +101,14 @@ public class YoutubeIpRotatorFilter implements HttpContextFilter {
 
       routePlanner.markAddressFailing(context);
       return limitedRetry(context);
+    }
+
+    if (error instanceof FriendlyException) {
+      log.warn("CAPTCHA ON {}, marking address as failing and retry!",
+          routePlanner.getLastAddress(context));
+
+        routePlanner.markAddressFailing(context);
+        return limitedRetry(context);
     }
 
     if (delegate != null) {
